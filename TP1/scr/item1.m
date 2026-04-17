@@ -1,75 +1,87 @@
+close all; clear; clc;
 
-R= 220;%[ohm]
-L= 500e-3;%[Hy]
-Cap= 2.2e-6; %[F]
-V_e = 12;% [V] voltaje de entrada
-%Matrices del espacio
-A= [-R/L -1/L ; 1/Cap 0]; % Matriz de estados
-B= [1/L ; 0]; %Matriz de entrada
-C= [R 0]; %Matriz de salida
-D=[0]; %Matriz de transmisión directa
+%%
+% Parámetros del sistema
+R = 2200; 
+L = 500e-3; 
+Cap = 10e-6; 
 
-%Punto de operación de V y I
-I1(1)=0;
-Vc(1)=0;
-y(1)=0;
-Xop=[0 0]' ;
-x=[I1(1) Vc(1)]';
+vin = 12;   % amplitud
 
-%convierte de espacio de estados a función de transferencia
-[numF,denF] = ss2tf(A,B,C,D)
+% Condiciones iniciales
+x = [0; 0];   % [Il; Vc]
 
-%Función de transferencia del sistema
-F=tf(numF,denF)
+% Espacio de estados
+A = [-R/L  -1/L; 
+      1/Cap  0];
+B = [1/L; 0];
+C = [R 0];
 
-poles=roots(denF)
-Wd1=imag(poles(1))
-Wd2= imag(poles(2))
-[Wn,zita]=damp(F)
-t_d=(2*pi)/Wd1
-%time de integración
-delta=t_d/100 %
-t_l=log(0.05)/(real(poles(1)))
-t_sim=3*t_l
-step=round(t_sim/delta)
-t = linspace(0, t_sim, step);
+%%
+% Función de transferencia (solo para ver polos)
+[numG, denG] = ss2tf(A,B,C,0);
+G = tf(numG, denG)
 
-u=linspace(0,0,step);
+poles = roots(denG)
 
-ii=0;
+%%
+% TIEMPO (🔥 CORREGIDO)
+tint = 1e-5;        % paso de integración correcto
+tsim = 0.05;        % 50 ms
 
-for i=1:step-1
-    ii = ii + delta; %Variable acumuladora de tiempo -Creación de  u(t)
-    if(ii >= 10e-3) %porque conmuta cada 10 milisegundo
-        ii=0;
-        V_e=V_e*-1; %Cambio el sentido de crecimiento
+t = 0:tint:tsim;    % 🔥 vector de tiempo correcto
+N = length(t);
+
+% Inicialización
+u  = zeros(1,N);
+y  = zeros(1,N);
+Il = zeros(1,N);
+Vc = zeros(1,N);
+
+%%
+% Señal cuadrada (cambia cada 10 ms)
+Tswitch = 0.01;
+
+for i=1:N-1
+    
+    % Generación robusta de señal cuadrada
+    if sin(2*pi*(1/(2*Tswitch))*t(i)) >= 0
+        u(i) = vin;
+    else
+        u(i) = -vin;
     end
-    u(i)= V_e;
-%Aplicación de Euler
-    xp=A*(x-Xop)+B*u(i); %representa la funcion derivada de X
-    x=x+xp*delta;    %% Obtengo el valor de X a partir de los valores de su derivada
-    Y=C*x;           %Almacena el valor actual de la salida
-
-    %Siempre hago referencia al valor siguiente, ya que el primer valor
-    % siempre es cero
-    y(i+1)=Y(1);    %Hago que el valor siguiente sea el actual
-    I1(i+1)=x(1);
-    Vc(i+1)=x(2);
+    
+    % Dinámica del sistema (Euler)
+    xp = A*x + B*u(i);
+    x = x + xp*tint;
+    
+    % Salidas
+    y(i)  = C*x;
+    Il(i) = x(1);
+    Vc(i) = x(2);
 end
-u(end)=u(end-1);
 
-disp('Simulación completada')
+%%
+% GRÁFICAS
 
-figure(1);
-hold on
-subplot(3,1,1)
-plot(t,u,'blue','LineWidth',1); title('Tension de entrada , u_t')
+figure
+
+subplot(4,1,1)
+plot(t,Il,'b','LineWidth',1.2)
+title('Corriente i_L')
 grid on
-subplot(3,1,2)
-plot(t,Vc,'red','LineWidth',1); title('Tension en el capacitor, Vc_t')
+
+subplot(4,1,2)
+plot(t,Vc,'r','LineWidth',1.2)
+title('Tensión en el capacitor v_C')
 grid on
-subplot(3,1,3);
-plot(t,I1,'blue','LineWidth',1); title('Corriente , i_t');
-grid on;
 
+subplot(4,1,3)
+stairs(t,u,'m','LineWidth',1.5)   % 🔥 entrada bien cuadrada
+title('Entrada u(t)')
+grid on
 
+subplot(4,1,4)
+plot(t,y,'k','LineWidth',1.2)
+title('Salida v_R')
+grid on
