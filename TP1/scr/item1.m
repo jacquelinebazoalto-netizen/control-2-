@@ -9,8 +9,7 @@ B = [1/L; 0];
 C = [R 0];                 
 D = 0;                     
 
-% --- Cálculo de tR y tint (Dinámica Rápida) ---
-% Usamos eig(A) para obtener los polos directamente
+
 polos = eig(A);
 % tR es la constante de tiempo (inversa de la parte real del polo)
 tR = 1 / max(abs(real(polos))); 
