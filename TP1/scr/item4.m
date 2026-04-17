@@ -44,7 +44,7 @@ t    = 0:tint:tF;                      % vector de tiempo para gráfica
 um   = E*ones(1, length(t));           % vector de acción sobre el motor
 
 % se genera el vector de torque
-TLmax    = 0.0014;
+TLmax    = 0.00135;
 TL       = zeros(1, length(t));
 for i=1:tF/tint
     tt = t(i);
