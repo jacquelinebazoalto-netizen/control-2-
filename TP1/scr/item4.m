@@ -9,18 +9,6 @@ Ki  = 6.49e-3;
 Km  = 6.53e-3;     
 E   = 12;                     % tensión de actuación sobre el motor
 
-%%
-% MODELADO DEL MOTOR EN EL ESPACIO DE ESTADOS
-% Este modelado permite obtener fácilmente las funciones de transferencia
-% para las salidas de interés respecto a la tensión aplicada y el torque,
-% considerando a éste último como una entrada de perturbación
-
-% Variables de estado.
-% x1 = ia, x2 = wr, x3 = theta
-% Entradas
-% u1 = E, u2 = TL
-% Salidas.
-% y1 = wr
 A = [-Ra/La -Km/La 0 ; Ki/J -Bm/J 0 ; 0 1 0];    % matriz de estados
 B = [1/La 0 ; 0 -1/J ; 0 0];                     % matriz de entrada 
 C = [0 1 0];                                     % matriz de salida                                                       
