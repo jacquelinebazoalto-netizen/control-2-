@@ -1,87 +1,62 @@
 close all; clear; clc;
 
-%%
-% Parámetros del sistema
-R = 2200; 
-L = 500e-3; 
-Cap = 10e-6; 
+% --- Parámetros de diseño (Tus valores reales) ---
+R = 2200; L = 500e-3; Cap = 10e-6; vin = 12;   
 
-vin = 12;   % amplitud
+% --- Espacio de estados ---
+A = [-R/L -1/L; 1/Cap 0];  
+B = [1/L; 0];              
+C = [R 0];                 
+D = 0;                     
 
-% Condiciones iniciales
-x = [0; 0];   % [Il; Vc]
+% --- Cálculo de tR y tint (Dinámica Rápida) ---
+% Usamos eig(A) para obtener los polos directamente
+polos = eig(A);
+% tR es la constante de tiempo (inversa de la parte real del polo)
+tR = 1 / max(abs(real(polos))); 
 
-% Espacio de estados
-A = [-R/L  -1/L; 
-      1/Cap  0];
-B = [1/L; 0];
-C = [R 0];
+% Si pones tint = tR/100 y tR es muy chico, 
+% el bucle puede tardar mucho. tR/100 es ideal.
+tint = tR / 100; 
 
-%%
-% Función de transferencia (solo para ver polos)
-[numG, denG] = ss2tf(A,B,C,0);
-G = tf(numG, denG)
+% --- Configuración de Simulación ---
+tsim = 0.05;         
+t = 0:tint:tsim;    % Creamos el vector tiempo primero
+N = length(t);      % Medimos cuántos puntos hay
 
-poles = roots(denG)
+% --- Pre-asignación (ESTO ES CLAVE para que aparezca la gráfica) ---
+% Creamos los vectores del mismo tamaño que 't'
+u = zeros(1, N);
+Il = zeros(1, N);
+Vcl = zeros(1, N);
+y = zeros(1, N);
 
-%%
-% TIEMPO (🔥 CORREGIDO)
-tint = 1e-5;        % paso de integración correcto
-tsim = 0.05;        % 50 ms
+x = [0; 0]; % Estado inicial
+Tswitch = 0.01; 
 
-t = 0:tint:tsim;    % 🔥 vector de tiempo correcto
-N = length(t);
-
-% Inicialización
-u  = zeros(1,N);
-y  = zeros(1,N);
-Il = zeros(1,N);
-Vc = zeros(1,N);
-
-%%
-% Señal cuadrada (cambia cada 10 ms)
-Tswitch = 0.01;
-
-for i=1:N-1
-    
-    % Generación robusta de señal cuadrada
-    if sin(2*pi*(1/(2*Tswitch))*t(i)) >= 0
-        u(i) = vin;
+% --- Bucle de Simulación ---
+for i = 1:N-1
+    % Entrada cuadrada
+    if mod(floor(t(i)/Tswitch), 2) == 0
+        u(i) = 12;
     else
-        u(i) = -vin;
+        u(i) = -12;
     end
     
-    % Dinámica del sistema (Euler)
+    % Euler
     xp = A*x + B*u(i);
     x = x + xp*tint;
     
-    % Salidas
-    y(i)  = C*x;
-    Il(i) = x(1);
-    Vc(i) = x(2);
+    % Guardar (usamos i+1 para no pisar el estado inicial)
+    Il(i+1) = x(1);
+    Vcl(i+1) = x(2);
+    y(i+1) = C*x;
 end
+u(N) = u(N-1); % Completamos el último punto de la entrada
 
-%%
-% GRÁFICAS
-
-figure
-
-subplot(4,1,1)
-plot(t,Il,'b','LineWidth',1.2)
-title('Corriente i_L')
-grid on
-
-subplot(4,1,2)
-plot(t,Vc,'r','LineWidth',1.2)
-title('Tensión en el capacitor v_C')
-grid on
-
-subplot(4,1,3)
-stairs(t,u,'m','LineWidth',1.5)   % 🔥 entrada bien cuadrada
-title('Entrada u(t)')
-grid on
-
-subplot(4,1,4)
-plot(t,y,'k','LineWidth',1.2)
-title('Salida v_R')
-grid on
+% --- Gráficas ---
+figure(1)
+subplot(4,1,1); plot(t, Il, 'b', 'LineWidth', 1); title('Corriente (i_L)'); grid on;
+subplot(4,1,2); plot(t, Vcl, 'r', 'LineWidth', 1); title('Tensión Capacitor (v_c)'); grid on;
+subplot(4,1,3); plot(t, u, 'k'); title('Entrada (u)'); grid on; ylim([-15 15]);
+subplot(4,1,4); plot(t, y, 'm', 'LineWidth', 1); title('Salida (v_r)'); grid on;
