@@ -139,7 +139,7 @@ p_max = floor(Tf/dT);
 
 tt = 0:dT:p_max*dT;
 
-deadZone = 3;
+deadZone = 0.5;
 
 %% VARIABLES
 
