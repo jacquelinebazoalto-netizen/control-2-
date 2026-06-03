@@ -24,19 +24,19 @@ k = w(end)/StepAmplitude
 
 Imax = max(abs(ia))
 
-Ra = 10/Imax
+Ra = 0.999
 
 K_tl = (30.33 - 66.66)/20
 
-Km = 1/k
+Km = 0.10
 
-Ki = -Ra/(K_tl*Km)
+Ki = 10
 
-Bm = 0;
+Bm = 0.5;
 
-J = (0.0945*Ki*Km)/Ra
+J = 2.04
 
-La = (0.0002148*Ki*Km)/J
+La = 1.030
 
 %% ESPACIO DE ESTADOS CONTINUO
 
