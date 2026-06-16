@@ -5,7 +5,7 @@ p1 = -2;
 p2 = 0;
 K = 5;
 Sobrepaso = 5;
-t_2percent = 2;
+t_2percent = 4;
 error = 0;
 T = 0.3;
 
